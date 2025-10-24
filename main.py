@@ -14,7 +14,7 @@
 # ===============================================
 from data_loading import load_and_prepare_data
 from feature_engineering import process_features
-from preprocessing import impute_missing_values, encode_categories
+from preprocessing import encode_categories, impute_in_batches
 from analysis import run_pandas_analysis
 from visualization import generate_advanced_plot, generate_histograms
 
@@ -31,14 +31,16 @@ if __name__ == "__main__":
 
     # 3. Imputacja braków i kodowanie kategorii
     print('Imputacja braków i kodowanie kategorii')
-    df_simple, df_ffill, df_mice = impute_missing_values(df)
-    df_encoded = encode_categories(df_mice)
+    df_simple = impute_in_batches(df, method="simple")
+    df_ffill = impute_in_batches(df, method="ffill")
+    # df_mice = impute_in_batches(df, method="mice")
+    df_encoded = encode_categories(df_simple)
 
-    # 4. Analizy Pandas
+    # # 4. Analizy Pandas
     print('Analizy Pandas')
     run_pandas_analysis(df_encoded)
 
-    # 5. Wizualizacje
+    # # 5. Wizualizacje
     print('Wizualizacje')
     generate_advanced_plot(df_encoded)
     generate_histograms(df_encoded)
