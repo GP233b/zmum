@@ -1,5 +1,3 @@
-
-
 # ===============================================
 # preprocessing.py
 # ===============================================
@@ -61,7 +59,7 @@ def encode_categories(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def impute_in_batches(df: pd.DataFrame, output_dir: str = '', method: str = "simple", batch_size: int = 100_000):
+def impute_in_batches(df: pd.DataFrame, output_dir: str = 'datasets_out', method: str = "simple", batch_size: int = 100_000):
     output_dir = os.path.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 

@@ -17,13 +17,15 @@ from feature_engineering import process_features
 from preprocessing import encode_categories, impute_in_batches
 from analysis import run_pandas_analysis
 from visualization import generate_advanced_plot, generate_histograms
+import run_models
+import pandas as pd
 
 if __name__ == "__main__":
     print("--- WILDFIRE IGNITION FORECASTING PIPELINE ---")
 
     # 1. Wczytanie danych
     print('Wczytanie danych')
-    df = load_and_prepare_data('Wildfire_Dataset.csv')
+    df = load_and_prepare_data('datasets/Wildfire_Dataset.csv')
 
     # 2. Feature engineering
     print('Feature engineering')
@@ -44,6 +46,12 @@ if __name__ == "__main__":
     print('Wizualizacje')
     generate_advanced_plot(df_encoded)
     generate_histograms(df_encoded)
+
+    print('Uruchamiam etap trenowania modeli (korzystając z już wczytanych danych)...')
+    try:
+        run_models.run_models_from_df(df_encoded)
+    except Exception as e:
+        print('Błąd podczas trenowania modeli:', e)
 
     print("--- KONIEC PIPELINE ---")
 
