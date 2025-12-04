@@ -32,8 +32,7 @@ def accuracy_score_manual(y_true: List, y_pred: List) -> float:
     return float((y_true == y_pred).sum()) / max(len(y_true), 1)
 
 
-def precision_recall_f1_manual(y_true: List, y_pred: List, average: str = 'macro') -> Dict[str, Any]:
-    # Works for binary and multiclass. Returns per-class and averaged metrics.
+def precision_recall_f1_manual(y_true: List, y_pred: List, average: str = 'weighted') -> Dict[str, Any]:
     cm = confusion_matrix_manual(y_true, y_pred)
     tp = np.diag(cm).astype(float)
     fp = cm.sum(axis=0).astype(float) - tp
@@ -44,6 +43,12 @@ def precision_recall_f1_manual(y_true: List, y_pred: List, average: str = 'macro
         recall_per_class = np.where(tp + fn == 0, 0.0, tp / (tp + fn))
         f1_per_class = np.where(precision_per_class + recall_per_class == 0, 0.0,
                                 2 * precision_per_class * recall_per_class / (precision_per_class + recall_per_class))
+
+    class_counts = cm.sum(axis=1).astype(float)
+
+    inverse_weights = 1 / class_counts
+
+    weights = inverse_weights / inverse_weights.sum()
 
     results = {
         'precision_per_class': precision_per_class.tolist(),
@@ -65,13 +70,17 @@ def precision_recall_f1_manual(y_true: List, y_pred: List, average: str = 'macro
         results['precision'] = precision
         results['recall'] = recall
         results['f1'] = f1
+    elif average == 'weighted':
+        results['precision'] = float(np.sum(precision_per_class * weights))
+        results['recall'] = float(np.sum(recall_per_class * weights))
+        results['f1'] = float(np.sum(f1_per_class * weights))
     else:
         raise ValueError("Unsupported average. Use 'macro' or 'micro'.")
 
     return results
 
 
-def classification_report_manual(y_true: List, y_pred: List, labels: List = None, average: str = 'macro') -> Dict[str, Any]:
+def classification_report_manual(y_true: List, y_pred: List, labels: List = None, average: str = 'weighted') -> Dict[str, Any]:
     cm = confusion_matrix_manual(y_true, y_pred, labels)
     metrics = precision_recall_f1_manual(y_true, y_pred, average=average)
     acc = accuracy_score_manual(y_true, y_pred)

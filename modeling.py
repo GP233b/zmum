@@ -37,7 +37,6 @@ def manual_train_test_split(df: pd.DataFrame, target_col: str, test_size: float 
     indices = np.arange(n)
 
     if stratify and df[target_col].nunique() > 1:
-        # stratified split: group by class and sample proportionally
         train_idx = []
         test_idx = []
         for cls, grp in df.groupby(target_col):
@@ -58,7 +57,6 @@ def manual_train_test_split(df: pd.DataFrame, target_col: str, test_size: float 
 
 
 def manual_kfold_cv(X: np.ndarray, y: np.ndarray, model, k: int = 5, random_state: int = 42) -> Dict[str, Any]:
-    # Manual k-fold using StratifiedKFold from sklearn for reproducibility.
     skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=random_state)
     fold_results = []
     for fold, (train_idx, val_idx) in enumerate(skf.split(X, y), start=1):
@@ -66,9 +64,8 @@ def manual_kfold_cv(X: np.ndarray, y: np.ndarray, model, k: int = 5, random_stat
         clf.fit(X[train_idx], y[train_idx])
         preds = clf.predict(X[val_idx])
         acc = accuracy_score_manual(y[val_idx], preds)
-        metrics = precision_recall_f1_manual(y[val_idx], preds, average='macro')
+        metrics = precision_recall_f1_manual(y[val_idx], preds)
         fold_results.append({'fold': fold, 'accuracy': acc, **metrics})
-    # aggregate
     avg_accuracy = float(np.mean([r['accuracy'] for r in fold_results]))
     avg_precision = float(np.mean([r['precision'] for r in fold_results]))
     avg_recall = float(np.mean([r['recall'] for r in fold_results]))
@@ -104,12 +101,10 @@ def train_and_evaluate(models: Dict[str, Any], X_train: np.ndarray, y_train: np.
         print(f"Trenuję model: {name}")
         clf.fit(X_train, y_train)
         preds = clf.predict(X_test)
-        report = classification_report_manual(y_test, preds, average='macro')
+        report = classification_report_manual(y_test, preds, average='weighted')
         cm = confusion_matrix_manual(y_test, preds)
-        # save confusion matrix csv
         cm_path = os.path.join(out_dir, f'confusion_{name}.csv')
         pd.DataFrame(cm).to_csv(cm_path, index=False)
-        # save confusion matrix plot
         try:
             labels = np.unique(np.concatenate([y_test, preds]))
             plt.figure(figsize=(6, 5))
@@ -138,9 +133,7 @@ def build_ensembles(models: Dict[str, Any]) -> Dict[str, Any]:
     estimators = [(k, v) for k, v in models.items() if k in ('logistic', 'rf', 'gboost', 'xgb', 'lgbm')]
     ensembles = {}
     if len(estimators) >= 2:
-        # Voting (soft when possible)
         ensembles['voting'] = VotingClassifier(estimators=estimators, voting='soft')
-        # Stacking
         final = LogisticRegression(max_iter=1000)
         ensembles['stacking'] = StackingClassifier(estimators=estimators, final_estimator=final, passthrough=False)
     return ensembles

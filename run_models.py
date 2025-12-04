@@ -31,7 +31,6 @@ def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 
     results_df = train_and_evaluate(models, X_train, y_train, X_test, y_test, out_dir=out_dir)
     results_df.to_csv(os.path.join(out_dir, 'model_results_simple_split.csv'), index=False)
 
-    # plot comparison of metrics for models trained without CV
     try:
         import matplotlib.pyplot as plt
         import seaborn as sns
@@ -50,11 +49,9 @@ def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 
     except Exception:
         pass
 
-    # manual CV for one chosen model (RandomForest if available)
     chosen = 'rf' if 'rf' in models else list(models.keys())[0]
     print(f'Uruchamiam ręczną walidację krzyżową dla modelu: {chosen}')
     cv_res = manual_kfold_cv(X, y, models[chosen], k=5, random_state=42)
-    # save CV summary
     cv_summary = {
         'model': chosen,
         'avg_accuracy': cv_res['avg_accuracy'],
@@ -64,7 +61,6 @@ def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 
     }
     pd.DataFrame([cv_summary]).to_csv(os.path.join(out_dir, 'cv_summary.csv'), index=False)
 
-    # Ensembles
     ensembles = build_ensembles(models)
     if ensembles:
         print('Trenowanie ensemble (voting + stacking) i ewaluacja')
@@ -80,18 +76,6 @@ def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 
 
 def prepare_X_y(df: pd.DataFrame, target_col: str):
     df2 = df.copy()
-    # drop obvious identifiers
-    drop_cols = [c for c in df2.columns if c.lower() in ('id', 'identifier')]
-    if target_col in drop_cols:
-        drop_cols.remove(target_col)
-    df2 = df2.drop(columns=drop_cols, errors='ignore')
-
-    # simple impute for numeric columns
-    df2 = impute_simple(df2)
-    # encode categories (creates new columns)
-    df2 = encode_categories(df2)
-
-    # Build X using numeric columns only (including encoded ones)
     numeric_cols = df2.select_dtypes(include=[np.number]).columns.tolist()
     if target_col in numeric_cols:
         numeric_cols.remove(target_col)

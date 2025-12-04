@@ -47,7 +47,7 @@ if __name__ == "__main__":
     generate_advanced_plot(df_encoded)
     generate_histograms(df_encoded)
 
-    print('Uruchamiam etap trenowania modeli (korzystając z już wczytanych danych)...')
+    print('Trenowanie modeli')
     try:
         run_models.run_models_from_df(df_encoded)
     except Exception as e:
