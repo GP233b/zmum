@@ -1,0 +1,9 @@
+datasets/*
+
+datasets_out*/*
+
+model_outputs*/*
+
+*.png
+
+*.md
