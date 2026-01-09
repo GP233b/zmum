@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from preprocessing import impute_simple, encode_categories
-from modeling import manual_train_test_split, build_default_models, train_and_evaluate, build_ensembles, manual_kfold_cv
+from modeling import manual_train_test_split, build_default_models, build_ensembles, manual_kfold_cv, train_and_evaluate_with_batch_balancing
 
     
 def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 'model_outputs'):
@@ -27,8 +27,21 @@ def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 
     print('Buduję modele domyślne...')
     models = build_default_models()
 
+    # NOWE: Trening z batch balansowaniem (Wszystkie dane, podzielone na batche)
+    print('\n' + '='*70)
+    print('TRENING Z BATCH BALANSOWANIEM (WSZYSTKIE DANE)')
+    print('='*70)
+    batch_results_df = train_and_evaluate_with_batch_balancing(
+        models, X_train, y_train, X_test, y_test, 
+        out_dir=out_dir, 
+        n_batch_iterations=1
+    )
+    print('='*70 + '\n')
+
+    results_df = batch_results_df
+
     print('Trenowanie i ewaluacja modeli (bez CV)')
-    results_df = train_and_evaluate(models, X_train, y_train, X_test, y_test, out_dir=out_dir)
+    # results_df = train_and_evaluate(models, X_train, y_train, X_test, y_test, out_dir=out_dir)
     results_df.to_csv(os.path.join(out_dir, 'model_results_simple_split.csv'), index=False)
 
     try:
@@ -64,7 +77,7 @@ def run_models_from_df(df: pd.DataFrame, target = 'Wildfire_le', out_dir: str = 
     ensembles = build_ensembles(models)
     if ensembles:
         print('Trenowanie ensemble (voting + stacking) i ewaluacja')
-        ens_df = train_and_evaluate(ensembles, X_train, y_train, X_test, y_test, out_dir=out_dir)
+        ens_df = train_and_evaluate_with_batch_balancing(ensembles, X_train, y_train, X_test, y_test, out_dir=out_dir)
         ens_df.to_csv(os.path.join(out_dir, 'ensemble_results.csv'), index=False)
         combined = pd.concat([results_df, ens_df], ignore_index=True)
         combined.to_csv(os.path.join(out_dir, 'all_model_results.csv'), index=False)
